@@ -22,13 +22,17 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Create Android Project
+      - name: Create Native Android Project
         run: flutter create . --platforms=android
 
-      - name: Update Android Min SDK
+      - name: Hardcode minSdkVersion 21
         run: |
-          sed -i 's/minSdkVersion.*/minSdkVersion 21/g' android/app/build.gradle || true
-          sed -i 's/minSdk =.*/minSdk = 21/g' android/app/build.gradle.kts || true
+          find android/ -name "build.gradle*" -exec sed -i 's/minSdkVersion.*/minSdkVersion 21/g' {} +
+          find android/ -name "build.gradle*" -exec sed -i 's/minSdk =.*/minSdk = 21/g' {} +
+          echo "flutter.minSdkVersion=21" >> android/local.properties
+
+      - name: Get Dependencies
+        run: flutter pub get
 
       - name: Build Debug APK
         run: flutter build apk --debug
