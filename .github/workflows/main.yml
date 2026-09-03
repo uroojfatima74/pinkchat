@@ -22,12 +22,23 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Generate Android Project
+      - name: Generate Android Native Files
         run: flutter create . --platforms=android
 
-      - name: Set minSdkVersion directly
+      - name: Configure Android minSdkVersion
         run: |
           echo "flutter.minSdkVersion=21" >> android/local.properties
+          echo "flutter.targetSdkVersion=33" >> android/local.properties
+
+          if [ -f "android/app/build.gradle" ]; then
+            sed -i 's/minSdkVersion.*/minSdkVersion 21/g' android/app/build.gradle
+            sed -i 's/flutter.minSdkVersion/21/g' android/app/build.gradle
+          fi
+
+          if [ -f "android/app/build.gradle.kts" ]; then
+            sed -i 's/minSdk =.*/minSdk = 21/g' android/app/build.gradle.kts
+            sed -i 's/flutter.minSdkVersion/21/g' android/app/build.gradle.kts
+          fi
 
       - name: Get Dependencies
         run: flutter pub get
