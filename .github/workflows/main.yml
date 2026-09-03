@@ -25,6 +25,11 @@ jobs:
       - name: Generate Android Files
         run: flutter create . --platforms=android
 
+      - name: Fix Min SDK Version
+        run: |
+          sed -i 's/minSdkVersion .*/minSdkVersion 21/' android/app/build.gradle || true
+          sed -i 's/flutter.minSdkVersion/21/' android/app/build.gradle || true
+
       - name: Get Dependencies
         run: flutter pub get
 
