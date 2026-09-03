@@ -132,7 +132,7 @@ class DetailChatScreen extends StatefulWidget {
 
 class _DetailChatScreenState extends State<DetailChatScreen> {
   final List<Map<String, dynamic>> messages = [
-    {'text': 'Hey there!', 'isAudio': false, 'isMe': false},
+    {'type': 'text', 'content': 'Hey there!', 'isMe': false},
   ];
   final TextEditingController _controller = TextEditingController();
   final AudioRecorder _audioRecorder = AudioRecorder();
@@ -153,7 +153,16 @@ class _DetailChatScreenState extends State<DetailChatScreen> {
     setState(() => _isRecording = false);
     if (path != null) {
       setState(() {
-        messages.add({'text': path, 'isAudio': true, 'isMe': true});
+        messages.add({'type': 'audio', 'content': path, 'isMe': true});
+      });
+    }
+  }
+
+  Future<void> _pickChatImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        messages.add({'type': 'image', 'content': File(pickedFile.path), 'isMe': true});
       });
     }
   }
@@ -161,7 +170,7 @@ class _DetailChatScreenState extends State<DetailChatScreen> {
   void _sendMessage() {
     if (_controller.text.trim().isNotEmpty) {
       setState(() {
-        messages.add({'text': _controller.text.trim(), 'isAudio': false, 'isMe': true});
+        messages.add({'type': 'text', 'content': _controller.text.trim(), 'isMe': true});
         _controller.clear();
       });
     }
@@ -184,23 +193,12 @@ class _DetailChatScreenState extends State<DetailChatScreen> {
                   alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 5),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: isMe ? const Color(0xFFFF69B4) : Colors.white,
                       borderRadius: BorderRadius.circular(15),
                     ),
-                    child: msg['isAudio']
-                        ? Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.play_arrow, color: Colors.white),
-                                onPressed: () => _audioPlayer.play(DeviceFileSource(msg['text'])),
-                              ),
-                              const Text('Voice Note', style: TextStyle(color: Colors.white)),
-                            ],
-                          )
-                        : Text(msg['text'], style: TextStyle(color: isMe ? Colors.white : Colors.black87)),
+                    child: _buildMessageContent(msg),
                   ),
                 );
               },
@@ -211,6 +209,10 @@ class _DetailChatScreenState extends State<DetailChatScreen> {
             color: Colors.white,
             child: Row(
               children: [
+                IconButton(
+                  icon: const Icon(Icons.image, color: Color(0xFFFF1493)),
+                  onPressed: _pickChatImage,
+                ),
                 Expanded(
                   child: TextField(
                     controller: _controller,
@@ -231,6 +233,29 @@ class _DetailChatScreenState extends State<DetailChatScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildMessageContent(Map<String, dynamic> msg) {
+    if (msg['type'] == 'text') {
+      return Text(msg['content'], style: TextStyle(color: msg['isMe'] ? Colors.white : Colors.black87));
+    } else if (msg['type'] == 'audio') {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.play_arrow, color: Colors.white),
+            onPressed: () => _audioPlayer.play(DeviceFileSource(msg['content'])),
+          ),
+          const Text('Voice Note', style: TextStyle(color: Colors.white)),
+        ],
+      );
+    } else if (msg['type'] == 'image') {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: Image.file(msg['content'] as File, width: 150, height: 150, fit: BoxFit.cover),
+      );
+    }
+    return const SizedBox();
   }
 }
 
